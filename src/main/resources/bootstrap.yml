@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: araok-authorization-service
+  cloud:
+    config:
+      uri: http://localhost:5000
+      enabled: true
