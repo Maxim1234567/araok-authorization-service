@@ -11,6 +11,7 @@ import io.jsonwebtoken.security.SignatureException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import ru.araok.dto.UserDto;
+import ru.araok.service.DateService;
 import ru.araok.service.JwtProviderService;
 
 import javax.crypto.SecretKey;
@@ -27,17 +28,21 @@ public class JwtProviderServiceImpl implements JwtProviderService {
 
     private final SecretKey jwtRefreshSecret;
 
+    private final DateService dateService;
+
     public JwtProviderServiceImpl(
             @Value("${jwt.secret.access}") String jwtAccessSecret,
-            @Value("${jwt.secret.refresh}") String jwtRefreshSecret
+            @Value("${jwt.secret.refresh}") String jwtRefreshSecret,
+            DateService dateService
     ) {
         this.jwtAccessSecret = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtAccessSecret));
         this.jwtRefreshSecret = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtRefreshSecret));
+        this.dateService = dateService;
     }
 
     @Override
     public String generateAccessToken(UserDto user) {
-        final LocalDateTime now = LocalDateTime.now();
+        final LocalDateTime now = dateService.getDateNow();
         final Instant accessExpirationInstant = now.plusMinutes(5).atZone(ZoneId.systemDefault()).toInstant();
         final Date accessExpiration = Date.from(accessExpirationInstant);
 
@@ -52,7 +57,7 @@ public class JwtProviderServiceImpl implements JwtProviderService {
 
     @Override
     public String generateRefreshToken(UserDto user) {
-        final LocalDateTime now = LocalDateTime.now();
+        final LocalDateTime now = dateService.getDateNow();
         final Instant refreshExpirationInstant = now.plusDays(30).atZone(ZoneId.systemDefault()).toInstant();
         final Date refreshExpiration = Date.from(refreshExpirationInstant);
 
