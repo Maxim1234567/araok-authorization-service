@@ -36,6 +36,17 @@ public class AuthenticationControllerTest {
 
     private static final String REFRESH_TOKEN = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzAxMjc3MjAwfQ.b07UmYm6JnUDKx8FPAtyFhQWpIMeKB5-xwFCnTH5xyu-VDPBpR_PauNX34m4SXf3Id3IAnwOfg4EPLbq2v2RSg";
 
+    private static String JSON_USER =
+            """
+                {
+                    "name": "Test",
+                    "phone": "89999999999",
+                    "password": "12345",
+                    "birthDate": "1994-08-05",
+                    "role": "USER"
+                }
+            """;
+
     private static String JSON_AUTH_REQUEST = "{\"phone\":\"89999999999\",\"password\":\"12345\"}";
 
     private static String JSON_JWT_RESPONSE = "{\"type\":\"Bearer\",\"accessToken\":\"eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxIiwiZXhwIjoxNjk4Njg1NTAwLCJyb2xlIjoiVVNFUiIsIm5hbWUiOiJNYXhpbSJ9.-ozJvK3by0TCPl0wpZrTEv4qAlOB4UbMNYpMvYif3D2BT7KfBeebu3eTjrsV05JZIDE7gDlPhoKx9UM3VoTlsw\",\"refreshToken\":\"eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzAxMjc3MjAwfQ.b07UmYm6JnUDKx8FPAtyFhQWpIMeKB5-xwFCnTH5xyu-VDPBpR_PauNX34m4SXf3Id3IAnwOfg4EPLbq2v2RSg\"}";
@@ -91,6 +102,8 @@ public class AuthenticationControllerTest {
 
     @Test
     public void shouldCorrectRegistrationUser() throws Exception {
+        System.out.println(mapper.writeValueAsString(user));
+
         given(authService.login(any(JwtRequest.class)))
                 .willReturn(jwtResponse);
 
@@ -98,7 +111,7 @@ public class AuthenticationControllerTest {
                 .with(csrf())
                 .header("Accept", "application/json")
                 .header("Content-Type", "application/json")
-                .content(mapper.writeValueAsString(user))
+                .content(JSON_USER)
         ).andExpect(status().isCreated())
         .andExpect(content().json(JSON_JWT_RESPONSE));
 
