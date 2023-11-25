@@ -8,6 +8,7 @@ import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import ru.araok.dto.UserDto;
@@ -21,6 +22,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 
+@Slf4j
 @Component
 public class JwtProviderServiceImpl implements JwtProviderService {
 
@@ -42,6 +44,8 @@ public class JwtProviderServiceImpl implements JwtProviderService {
 
     @Override
     public String generateAccessToken(UserDto user) {
+        log.info("generate access token");
+
         final LocalDateTime now = dateService.getDateNow();
         final Instant accessExpirationInstant = now.plusMinutes(5).atZone(ZoneId.systemDefault()).toInstant();
         final Date accessExpiration = Date.from(accessExpirationInstant);
@@ -51,12 +55,14 @@ public class JwtProviderServiceImpl implements JwtProviderService {
                 .setExpiration(accessExpiration)
                 .signWith(jwtAccessSecret)
                 .claim("role", user.getRole())
-                .claim("name", user.getName())
+                .claim("phone", user.getPhone())
                 .compact();
     }
 
     @Override
     public String generateRefreshToken(UserDto user) {
+        log.info("generate refresh token");
+
         final LocalDateTime now = dateService.getDateNow();
         final Instant refreshExpirationInstant = now.plusDays(30).atZone(ZoneId.systemDefault()).toInstant();
         final Date refreshExpiration = Date.from(refreshExpirationInstant);
@@ -70,6 +76,8 @@ public class JwtProviderServiceImpl implements JwtProviderService {
 
     @Override
     public boolean validateAccessToken(String accessToken) {
+        log.info("check validation access token");
+
         return validateToken(accessToken, jwtAccessSecret);
     }
 

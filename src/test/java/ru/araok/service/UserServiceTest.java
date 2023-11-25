@@ -16,6 +16,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
@@ -44,6 +45,18 @@ public class UserServiceTest {
         userService = new UserServiceImpl(
                 userRepository
         );
+    }
+
+    @Test
+    public void shouldCorrectSaveUser() {
+        given(userRepository.save(any(User.class)))
+                .willReturn(user);
+
+        UserDto result = userService.save(UserDto.toDto(user));
+
+        verify(userRepository, times(1)).save(any(User.class));
+
+        assertThatUser(user, result);
     }
 
     @Test
@@ -92,25 +105,25 @@ public class UserServiceTest {
 
     @Test
     public void shouldCorrectReturnUserByNameAndPassword() {
-        given(userRepository.findByNameAndPassword(eq("maxim"), eq("12345")))
+        given(userRepository.findByPhoneAndPassword(eq("89999999999"), eq("12345")))
                 .willReturn(Optional.of(user));
 
-        UserDto result = userService.getByNameAndPassword("maxim", "12345");
+        UserDto result = userService.getByPhoneAndPassword("89999999999", "12345");
 
         verify(userRepository, times(1))
-                .findByNameAndPassword(eq("maxim"), eq("12345"));
+                .findByPhoneAndPassword(eq("89999999999"), eq("12345"));
 
         assertThatUser(user, result);
     }
 
     @Test
     public void shouldThrowAuthExceptionByNameAndPassword() {
-        given(userRepository.findByNameAndPassword(eq("maxim"), eq("12345")))
+        given(userRepository.findByPhoneAndPassword(eq("89999999999"), eq("12345")))
                 .willReturn(Optional.empty());
 
-        assertThrows(AuthException.class, () -> userService.getByNameAndPassword("maxim", "12345"));
+        assertThrows(AuthException.class, () -> userService.getByPhoneAndPassword("89999999999", "12345"));
 
-        verify(userRepository, times(1)).findByNameAndPassword(eq("maxim"), eq("12345"));
+        verify(userRepository, times(1)).findByPhoneAndPassword(eq("89999999999"), eq("12345"));
     }
 
     private void assertThatUser(User excepted, UserDto result) {

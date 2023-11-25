@@ -1,7 +1,9 @@
 package ru.araok.service.impl;
 
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import ru.araok.domain.JwtAuthentication;
@@ -16,6 +18,7 @@ import ru.araok.service.UserService;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -26,25 +29,30 @@ public class AuthServiceImpl implements AuthService {
     private final JwtProviderService jwtProviderService;
 
     @Override
+    @HystrixCommand(commandKey = "login")
     public JwtResponse login(JwtRequest authRequest) {
-        final UserDto user = userService.getByName(authRequest.getName());
+        final UserDto user = userService.getByPhoneAndPassword(authRequest.getPhone(), authRequest.getPassword());
 
-        if(user.getPassword().equals(authRequest.getPassword())) {
-            final String accessToken = jwtProviderService.generateAccessToken(user);
-            final String refreshToken = jwtProviderService.generateRefreshToken(user);
-            refreshStorage.put(user.getId(), refreshToken);
-            return new JwtResponse(accessToken, refreshToken);
-        }
+        log.info("password equals");
 
-        throw new AuthException("Неправильный пароль");
+        log.info("auth user phone: {}", user.getPhone());
+        log.info("auth user password: {}", user.getPassword());
+
+        final String accessToken = jwtProviderService.generateAccessToken(user);
+        final String refreshToken = jwtProviderService.generateRefreshToken(user);
+        refreshStorage.put(user.getId(), refreshToken);
+
+        return new JwtResponse(accessToken, refreshToken);
     }
 
     @Override
+    @HystrixCommand(commandKey = "getAccessToken")
     public JwtResponse getAccessToken(String refreshToken) {
         if(jwtProviderService.validateRefreshToken(refreshToken)) {
             final Claims claims = jwtProviderService.getRefreshClaims(refreshToken);
             final Long id = Long.parseLong(claims.getSubject());
             final String saveRefreshToken = refreshStorage.get(id);
+
             if(saveRefreshToken != null && saveRefreshToken.equals(refreshToken)) {
                 final UserDto user = userService.getById(id);
                 final String accessToken = jwtProviderService.generateAccessToken(user);
@@ -56,11 +64,13 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @HystrixCommand(commandKey = "refresh")
     public JwtResponse refresh(String refreshToken) {
         if(jwtProviderService.validateRefreshToken(refreshToken)) {
             final Claims claims = jwtProviderService.getRefreshClaims(refreshToken);
             final Long id = Long.parseLong(claims.getSubject());
             final String saveRefreshToken = refreshStorage.get(id);
+
             if(saveRefreshToken != null && saveRefreshToken.equals(refreshToken)) {
                 final UserDto user = userService.getById(id);
                 final String accessToken = jwtProviderService.generateAccessToken(user);

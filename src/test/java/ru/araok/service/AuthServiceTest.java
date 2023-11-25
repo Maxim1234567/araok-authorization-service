@@ -55,7 +55,7 @@ public class AuthServiceTest {
                 .build();
 
         authRequest = JwtRequest.builder()
-                .name("maxim")
+                .phone("89999999999")
                 .password("12345")
                 .build();
 
@@ -71,7 +71,7 @@ public class AuthServiceTest {
 
     @Test
     public void shouldCorrectLoginReturnJwtResponse() {
-        given(userService.getByName(eq("maxim")))
+        given(userService.getByPhoneAndPassword(eq("89999999999"), eq("12345")))
                 .willReturn(user);
 
         given(jwtProviderService.generateAccessToken(user))
@@ -82,7 +82,7 @@ public class AuthServiceTest {
 
         JwtResponse response = authService.login(authRequest);
 
-        verify(userService, times(1)).getByName(eq("maxim"));
+        verify(userService, times(1)).getByPhoneAndPassword(eq("89999999999"), eq("12345"));
 
         verify(jwtProviderService, times(1)).generateAccessToken(any(UserDto.class));
 
@@ -98,12 +98,12 @@ public class AuthServiceTest {
     public void shouldThrowAuthExceptionIncorrectPassword() {
         user.setPassword("Incorrect password");
 
-        given(userService.getByName("maxim"))
-                .willReturn(user);
+        given(userService.getByPhoneAndPassword(eq("89999999999"), eq("12345")))
+                .willThrow(AuthException.class);
 
         assertThrows(AuthException.class, () -> authService.login(authRequest));
 
-        verify(userService, times(1)).getByName(eq("maxim"));
+        verify(userService, times(1)).getByPhoneAndPassword(eq("89999999999"), eq("12345"));
     }
 
     @Test

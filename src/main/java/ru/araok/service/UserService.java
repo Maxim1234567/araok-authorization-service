@@ -3,9 +3,12 @@ package ru.araok.service;
 import ru.araok.dto.UserDto;
 
 public interface UserService {
+
+    UserDto save(UserDto user);
+
     UserDto getByName(String name);
 
     UserDto getById(Long id);
 
-    UserDto getByNameAndPassword(String name, String password);
+    UserDto getByPhoneAndPassword(String phone, String password);
 }
