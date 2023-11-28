@@ -10,6 +10,7 @@ import ru.araok.domain.JwtAuthentication;
 import ru.araok.dto.JwtRequest;
 import ru.araok.dto.JwtResponse;
 import ru.araok.dto.UserDto;
+import ru.araok.dto.UserWithJwtResponse;
 import ru.araok.exception.AuthException;
 import ru.araok.service.AuthService;
 import ru.araok.service.JwtProviderService;
@@ -28,15 +29,31 @@ public class AuthServiceImpl implements AuthService {
 
     private final JwtProviderService jwtProviderService;
 
+
+    @Override
+    public UserWithJwtResponse saveAndGenerateToken(UserDto user) {
+        userService.save(user);
+
+        final JwtResponse token = login(JwtRequest.builder()
+                .phone(user.getPhone())
+                .password(user.getPassword())
+                .build());
+
+        return UserWithJwtResponse.builder()
+                .user(user)
+                .token(token)
+                .build();
+    }
+
     @Override
     @HystrixCommand(commandKey = "login")
     public JwtResponse login(JwtRequest authRequest) {
+        log.info("auth user phone: {}", authRequest.getPhone());
+        log.info("auth user password: {}", authRequest.getPassword());
+
         final UserDto user = userService.getByPhoneAndPassword(authRequest.getPhone(), authRequest.getPassword());
 
         log.info("password equals");
-
-        log.info("auth user phone: {}", user.getPhone());
-        log.info("auth user password: {}", user.getPassword());
 
         final String accessToken = jwtProviderService.generateAccessToken(user);
         final String refreshToken = jwtProviderService.generateRefreshToken(user);

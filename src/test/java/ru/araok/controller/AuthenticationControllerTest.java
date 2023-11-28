@@ -1,6 +1,5 @@
 package ru.araok.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,6 +12,7 @@ import org.springframework.web.context.WebApplicationContext;
 import ru.araok.dto.JwtRequest;
 import ru.araok.dto.JwtResponse;
 import ru.araok.dto.UserDto;
+import ru.araok.dto.UserWithJwtResponse;
 import ru.araok.filter.JwtFilter;
 import ru.araok.service.AuthService;
 import ru.araok.service.UserService;
@@ -53,6 +53,25 @@ public class AuthenticationControllerTest {
 
     private static String JSON_REFRESH_JWT_REQUEST = "{\"refreshToken\":\"eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzAxMjc3MjAwfQ.b07UmYm6JnUDKx8FPAtyFhQWpIMeKB5-xwFCnTH5xyu-VDPBpR_PauNX34m4SXf3Id3IAnwOfg4EPLbq2v2RSg\"}";
 
+    private static String JSON_JWT_RESPONSE_REGISTRATION =
+            """
+                            {
+                                "user": {
+                                    "id": null,
+                                    "name": "Test",
+                                    "phone": "89999999999",
+                                    "password": "12345",
+                                    "birthDate": "1994-08-05",
+                                    "role": "USER"
+                                },
+                                "token": {
+                                    "type": "Bearer",
+                                    "accessToken": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxIiwiZXhwIjoxNjk4Njg1NTAwLCJyb2xlIjoiVVNFUiIsIm5hbWUiOiJNYXhpbSJ9.-ozJvK3by0TCPl0wpZrTEv4qAlOB4UbMNYpMvYif3D2BT7KfBeebu3eTjrsV05JZIDE7gDlPhoKx9UM3VoTlsw",
+                                    "refreshToken": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzAxMjc3MjAwfQ.b07UmYm6JnUDKx8FPAtyFhQWpIMeKB5-xwFCnTH5xyu-VDPBpR_PauNX34m4SXf3Id3IAnwOfg4EPLbq2v2RSg"
+                                }
+                            }
+                    """;
+
     @MockBean
     private AuthService authService;
 
@@ -74,6 +93,8 @@ public class AuthenticationControllerTest {
     private JwtRequest authRequest;
 
     private JwtResponse jwtResponse;
+
+    private UserWithJwtResponse userWithJwtResponse;
 
     private UserDto user;
 
@@ -97,15 +118,20 @@ public class AuthenticationControllerTest {
                 .refreshToken(REFRESH_TOKEN)
                 .build();
 
+        userWithJwtResponse = UserWithJwtResponse.builder()
+                .user(user)
+                .token(jwtResponse)
+                .build();
+
         mvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
     }
 
     @Test
     public void shouldCorrectRegistrationUser() throws Exception {
-        System.out.println(mapper.writeValueAsString(user));
+        System.out.println(mapper.writeValueAsString(userWithJwtResponse));
 
-        given(authService.login(any(JwtRequest.class)))
-                .willReturn(jwtResponse);
+        given(authService.saveAndGenerateToken(any(UserDto.class)))
+                .willReturn(userWithJwtResponse);
 
         mvc.perform(post("/auth/registration")
                 .with(csrf())
@@ -113,10 +139,10 @@ public class AuthenticationControllerTest {
                 .header("Content-Type", "application/json")
                 .content(JSON_USER)
         ).andExpect(status().isCreated())
-        .andExpect(content().json(JSON_JWT_RESPONSE));
+        .andExpect(content().json(JSON_JWT_RESPONSE_REGISTRATION));
 
-        verify(userService, times(1)).save(any(UserDto.class));
-        verify(authService, times(1)).login(any(JwtRequest.class));
+        verify(authService, times(1))
+                .saveAndGenerateToken(any(UserDto.class));
     }
 
     @Test

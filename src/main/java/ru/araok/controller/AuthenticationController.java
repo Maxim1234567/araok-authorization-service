@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -11,8 +12,8 @@ import ru.araok.dto.JwtRequest;
 import ru.araok.dto.JwtResponse;
 import ru.araok.dto.RefreshJwtRequest;
 import ru.araok.dto.UserDto;
+import ru.araok.dto.UserWithJwtResponse;
 import ru.araok.service.AuthService;
-import ru.araok.service.UserService;
 
 @Slf4j
 @RestController
@@ -20,17 +21,13 @@ import ru.araok.service.UserService;
 public class AuthenticationController {
     private final AuthService authService;
 
-    private final UserService userService;
-
     @PostMapping("/auth/registration")
-    public ResponseEntity<JwtResponse> registration(@RequestBody UserDto user) {
-        userService.save(user);
+    public ResponseEntity<UserWithJwtResponse> registration(@RequestBody UserDto user) {
+        log.info("/auth/registration");
 
-        final JwtResponse token = authService.login(JwtRequest.builder()
-                .phone(user.getPhone())
-                .password(user.getPassword())
-                .build());
-        return ResponseEntity.status(HttpStatus.CREATED).body(token);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(authService.saveAndGenerateToken(user));
     }
 
     @PostMapping("/auth/login")
