@@ -4,23 +4,29 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import ru.araok.dto.UserDto;
-import ru.araok.service.UserService;
+import ru.araok.service.impl.UserAuthentication;
 
 @Slf4j
 @RestController
 @RequiredArgsConstructor
 public class UserController {
-    private final UserService userService;
+    private final UserAuthentication userAuthentication;
 
-    @GetMapping("/auth/user/{id}")
-    public ResponseEntity<UserDto> getUserById(@PathVariable("id") Long id) {
-        log.info("/auth/user/{id}");
+    @GetMapping("/auth/user")
+    public ResponseEntity<UserDto> getUserById() {
+        log.info("/auth/user");
 
         return ResponseEntity.ok(
-                userService.getById(id)
+                UserDto.builder()
+                        .id(userAuthentication.getId())
+                        .name(userAuthentication.getName())
+                        .birthDate(userAuthentication.getBirthDate())
+                        .phone(userAuthentication.getPhone())
+                        .password(userAuthentication.getPassword())
+                        .role(userAuthentication.getRole())
+                        .build()
         );
     }
 }

@@ -8,6 +8,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import ru.araok.dto.JwtRequest;
 import ru.araok.dto.JwtResponse;
 import ru.araok.dto.UserDto;
+import ru.araok.enums.RoleEnum;
 import ru.araok.exception.AuthException;
 import ru.araok.service.impl.AuthServiceImpl;
 
@@ -33,7 +34,7 @@ public class AuthServiceTest {
     private UserService userService;
 
     @Mock
-    private JwtProviderService jwtProviderService;
+    private JwtService jwtService;
 
     private AuthService authService;
 
@@ -51,7 +52,7 @@ public class AuthServiceTest {
                 .phone("89999999999")
                 .password("12345")
                 .birthDate(LocalDate.now())
-                .role("USER")
+                .role(RoleEnum.USER)
                 .build();
 
         authRequest = JwtRequest.builder()
@@ -65,7 +66,7 @@ public class AuthServiceTest {
                 .build();
 
         authService = new AuthServiceImpl(
-                userService, jwtProviderService
+                userService, jwtService
         );
     }
 
@@ -74,19 +75,19 @@ public class AuthServiceTest {
         given(userService.getByPhoneAndPassword(eq("89999999999"), eq("12345")))
                 .willReturn(user);
 
-        given(jwtProviderService.generateAccessToken(user))
+        given(jwtService.generateAccessToken(user))
                 .willReturn(ACCESS_TOKEN);
 
-        given(jwtProviderService.generateRefreshToken(user))
+        given(jwtService.generateRefreshToken(user))
                 .willReturn(REFRESH_TOKEN);
 
         JwtResponse response = authService.login(authRequest);
 
         verify(userService, times(1)).getByPhoneAndPassword(eq("89999999999"), eq("12345"));
 
-        verify(jwtProviderService, times(1)).generateAccessToken(any(UserDto.class));
+        verify(jwtService, times(1)).generateAccessToken(any(UserDto.class));
 
-        verify(jwtProviderService, times(1)).generateRefreshToken(any(UserDto.class));
+        verify(jwtService, times(1)).generateRefreshToken(any(UserDto.class));
 
         assertThat(response).isNotNull()
                 .matches(r -> r.getAccessToken().equals(ACCESS_TOKEN))

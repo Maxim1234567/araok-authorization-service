@@ -1,18 +1,24 @@
 package ru.araok.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import ru.araok.domain.User;
+import ru.araok.enums.RoleEnum;
 
 import java.time.LocalDate;
+import java.util.Collection;
+import java.util.List;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserDto {
+public class UserDto implements UserDetails {
     private Long id;
 
     private String name;
@@ -23,7 +29,43 @@ public class UserDto {
 
     private LocalDate birthDate;
 
-    private String role;
+    private RoleEnum role;
+
+    @Override
+    @JsonIgnore
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(role);
+    }
+
+    @Override
+    @JsonIgnore
+    public String getUsername() {
+        return String.valueOf(id);
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isEnabled() {
+        return true;
+    }
 
     public static User toDomainObject(UserDto dto) {
         return User.builder()

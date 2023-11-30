@@ -10,10 +10,11 @@ import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Service;
 import ru.araok.dto.UserDto;
 import ru.araok.service.DateService;
-import ru.araok.service.JwtProviderService;
+import ru.araok.service.JwtService;
 
 import javax.crypto.SecretKey;
 import java.security.Key;
@@ -21,10 +22,11 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.function.Function;
 
 @Slf4j
-@Component
-public class JwtProviderServiceImpl implements JwtProviderService {
+@Service
+public class JwtServiceImpl implements JwtService {
 
     private final SecretKey jwtAccessSecret;
 
@@ -32,7 +34,7 @@ public class JwtProviderServiceImpl implements JwtProviderService {
 
     private final DateService dateService;
 
-    public JwtProviderServiceImpl(
+    public JwtServiceImpl(
             @Value("${jwt.secret.access}") String jwtAccessSecret,
             @Value("${jwt.secret.refresh}") String jwtRefreshSecret,
             DateService dateService
@@ -54,8 +56,6 @@ public class JwtProviderServiceImpl implements JwtProviderService {
                 .setSubject(String.valueOf(user.getId()))
                 .setExpiration(accessExpiration)
                 .signWith(jwtAccessSecret)
-                .claim("role", user.getRole())
-                .claim("phone", user.getPhone())
                 .compact();
     }
 
@@ -75,10 +75,11 @@ public class JwtProviderServiceImpl implements JwtProviderService {
     }
 
     @Override
-    public boolean validateAccessToken(String accessToken) {
+    public boolean validateAccessToken(String accessToken, UserDetails userDetails) {
         log.info("check validation access token");
 
-        return validateToken(accessToken, jwtAccessSecret);
+        final String id = extractNameFromJwtToken(accessToken);
+        return validateToken(accessToken, jwtAccessSecret) && userDetails.getUsername().equals(id);
     }
 
     @Override
@@ -117,9 +118,29 @@ public class JwtProviderServiceImpl implements JwtProviderService {
         return getClaims(token, jwtRefreshSecret);
     }
 
+    @Override
+    public String extractNameFromJwtToken(String token) {
+        return extractClaim(token, Claims::getSubject);
+    }
+
+    @Override
+    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+        final Claims claims = extractAllClaims(token, jwtAccessSecret);
+        return claimsResolver.apply(claims);
+    }
+
     private Claims getClaims(String token,Key secret) {
         return Jwts.parserBuilder()
                 .setSigningKey(secret)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
+
+    private Claims extractAllClaims(String token, SecretKey key) {
+        return Jwts
+                .parserBuilder()
+                .setSigningKey(key)
                 .build()
                 .parseClaimsJws(token)
                 .getBody();

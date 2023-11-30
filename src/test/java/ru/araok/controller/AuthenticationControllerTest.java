@@ -13,6 +13,7 @@ import ru.araok.dto.JwtRequest;
 import ru.araok.dto.JwtResponse;
 import ru.araok.dto.UserDto;
 import ru.araok.dto.UserWithJwtResponse;
+import ru.araok.enums.RoleEnum;
 import ru.araok.filter.JwtFilter;
 import ru.araok.service.AuthService;
 import ru.araok.service.UserService;
@@ -105,7 +106,7 @@ public class AuthenticationControllerTest {
                 .phone("89999999999")
                 .password("12345")
                 .birthDate(LocalDate.of(1994, 8, 5))
-                .role("USER")
+                .role(RoleEnum.USER)
                 .build();
 
         authRequest = JwtRequest.builder()

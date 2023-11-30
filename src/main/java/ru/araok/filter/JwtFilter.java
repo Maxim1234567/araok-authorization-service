@@ -1,52 +1,64 @@
 package ru.araok.filter;
 
-import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
-import org.springframework.web.filter.GenericFilterBean;
-import ru.araok.domain.JwtAuthentication;
-import ru.araok.service.JwtProviderService;
-import ru.araok.utils.JwtUtils;
+import org.springframework.web.filter.OncePerRequestFilter;
+import ru.araok.service.JwtService;
 
 import java.io.IOException;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class JwtFilter extends GenericFilterBean {
+public class JwtFilter extends OncePerRequestFilter {
     private static final String AUTHORIZATION = "Authorization";
 
-    private final JwtProviderService jwtProviderService;
+    private final JwtService jwtService;
 
+    private final UserDetailsService userDetailsService;
 
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-        final String token = getTokenFromRequest((HttpServletRequest) request);
+    protected void doFilterInternal(
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain
+    ) throws ServletException, IOException {
+        final String token = getTokenFromRequest(request);
+
+        if(token == null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         log.info("token: {}", token);
 
-        if(token != null && jwtProviderService.validateAccessToken(token)) {
-            log.info("token is valid");
+        if(SecurityContextHolder.getContext().getAuthentication() == null) {
+            final String id = jwtService.extractNameFromJwtToken(token);
+            UserDetails userDetails = userDetailsService.loadUserByUsername(id);
 
-            final Claims claims = jwtProviderService.getAccessClaims(token);
-            final JwtAuthentication jwtInfoToken = JwtUtils.generate(claims);
-            jwtInfoToken.setAuthenticated(true);
+            if(jwtService.validateAccessToken(token, userDetails)) {
+                log.info("token is valid");
 
-            log.info("auth name: {}", jwtInfoToken.getName());
-            log.info("auth role: {}", jwtInfoToken.getRole());
+                UsernamePasswordAuthenticationToken authToken =
+                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authToken);
+            }
 
-            SecurityContextHolder.getContext().setAuthentication(jwtInfoToken);
+            filterChain.doFilter(request, response);
         }
-
-        chain.doFilter(request, response);
     }
 
     private String getTokenFromRequest(HttpServletRequest request) {

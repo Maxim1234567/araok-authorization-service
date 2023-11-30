@@ -10,6 +10,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import ru.araok.dto.UserDto;
+import ru.araok.enums.RoleEnum;
 import ru.araok.filter.JwtFilter;
 import ru.araok.service.UserService;
 
@@ -64,7 +65,7 @@ public class UserControllerTest {
                 .phone("89999999999")
                 .password("12345")
                 .birthDate(LocalDate.of(1994, 8, 5))
-                .role("USER")
+                .role(RoleEnum.USER)
                 .build();
 
         mvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();

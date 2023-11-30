@@ -7,6 +7,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.araok.domain.User;
 import ru.araok.dto.UserDto;
+import ru.araok.enums.RoleEnum;
 import ru.araok.exception.AuthException;
 import ru.araok.repository.UserRepository;
 import ru.araok.service.impl.UserServiceImpl;
@@ -39,7 +40,7 @@ public class UserServiceTest {
                 .phone("89999999999")
                 .password("12345")
                 .birthDate(LocalDate.now())
-                .role("USER")
+                .role(RoleEnum.USER)
                 .build();
 
         userService = new UserServiceImpl(

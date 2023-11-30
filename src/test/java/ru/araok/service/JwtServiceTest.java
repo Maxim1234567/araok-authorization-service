@@ -6,7 +6,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.araok.dto.UserDto;
-import ru.araok.service.impl.JwtProviderServiceImpl;
+import ru.araok.enums.RoleEnum;
+import ru.araok.service.impl.JwtServiceImpl;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -17,8 +18,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-public class JwtProviderServiceTest {
-    private static final String ACCESS_TOKEN = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxIiwiZXhwIjoxNjk4Njg1NTAwLCJyb2xlIjoiVVNFUiIsInBob25lIjoiODk5OTk5OTk5OTkifQ.JVaEv86Via7fwJQ3hph_tpb25lL0L1TnZAP1wenUM0f4vdb5cpvo7J0agq0ZqW0t-4kXWLYNth28sdbKbKrZ3g";
+public class JwtServiceTest {
+    private static final String ACCESS_TOKEN = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxIiwiZXhwIjoxNjk4Njg1NTAwfQ.36XhMj6csSuuvi8KRLKt_mQU1VTrSqRAYonz-TifEMtO_tZiuhZKZqusfFyoYTsEqTRk59y9eU37FYnoQCOAGw";
     private static final String REFRESH_TOKEN = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzAxMjc3MjAwfQ.b07UmYm6JnUDKx8FPAtyFhQWpIMeKB5-xwFCnTH5xyu-VDPBpR_PauNX34m4SXf3Id3IAnwOfg4EPLbq2v2RSg";
 
     private final String JWT_SECRET_ACCESS = "o5Ml5nd4nu7x0//6YavppFqDatneQWMV6YPpZ3beoHLXP3K23zYQhky5X1p4/H5eUdX1btPmjjBWPFR44/HIeA==";
@@ -27,13 +28,13 @@ public class JwtProviderServiceTest {
     @Mock
     private DateService dateService;
 
-    private JwtProviderService jwtProviderService;
+    private JwtService jwtService;
 
     private UserDto user;
 
     @BeforeEach
     public void setUp() {
-        jwtProviderService = new JwtProviderServiceImpl(
+        jwtService = new JwtServiceImpl(
                 JWT_SECRET_ACCESS, JWT_SECRET_REFRESH, dateService
         );
 
@@ -43,7 +44,7 @@ public class JwtProviderServiceTest {
                 .phone("89999999999")
                 .password("12345")
                 .birthDate(LocalDate.now())
-                .role("USER")
+                .role(RoleEnum.USER)
                 .build();
     }
 
@@ -52,7 +53,7 @@ public class JwtProviderServiceTest {
         given(dateService.getDateNow())
                 .willReturn(LocalDateTime.of(2023, 10, 30, 20, 00));
 
-        String resultToken = jwtProviderService.generateAccessToken(user);
+        String resultToken = jwtService.generateAccessToken(user);
 
         verify(dateService, times(1)).getDateNow();
 
@@ -65,7 +66,7 @@ public class JwtProviderServiceTest {
         given(dateService.getDateNow())
                 .willReturn(LocalDateTime.of(2023, 10, 30, 20, 00));
 
-        String resultToken = jwtProviderService.generateRefreshToken(user);
+        String resultToken = jwtService.generateRefreshToken(user);
 
         verify(dateService, times(1)).getDateNow();
 
